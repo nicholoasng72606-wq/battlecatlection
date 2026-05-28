@@ -39,7 +39,7 @@
         return { is_fourth: isFourth, fourth_path: fourthPath };
     }
 
-    // ---------- 解析系列資料 ----------
+    // ---------- 解析系列資料 (文字版) ----------
     function parseSeriesData(lines) {
         const seriesList = [];
         for (let rawLine of lines) {
@@ -115,7 +115,7 @@
         return seriesList;
     }
 
-    // 主解析函數
+    // 主解析函數 (文字版)
     function parseFullText(fullText) {
         const allLines = fullText.split(/\r?\n/);
         const effectiveLines = [];
@@ -160,6 +160,24 @@
         };
     }
 
+    // ---------- 嘗試解析 JSON 輸入 ----------
+    function tryParseAsJson(inputText) {
+        try {
+            const parsed = JSON.parse(inputText);
+            // 檢查是否有必要的結構：super_rare.系列 或 legend_rare.系列
+            if (parsed && typeof parsed === 'object') {
+                const hasSuperSeries = parsed.super_rare && Array.isArray(parsed.super_rare.系列);
+                const hasLegendSeries = parsed.legend_rare && Array.isArray(parsed.legend_rare.系列);
+                if (hasSuperSeries || hasLegendSeries) {
+                    return { success: true, data: parsed };
+                }
+            }
+            return { success: false, reason: 'JSON 結構不符合貓咪資料格式' };
+        } catch (e) {
+            return { success: false, reason: e.message };
+        }
+    }
+
     // 產生網格 HTML
     function buildGridFromSeries(seriesArray) {
         let allCardsHtml = '';
@@ -202,8 +220,8 @@
     }
 
     function renderGridFromResult(result) {
-        const superSeries = result.super_rare.系列 || [];
-        const legendSeries = result.legend_rare.系列 || [];
+        const superSeries = result.super_rare?.系列 || [];
+        const legendSeries = result.legend_rare?.系列 || [];
         const superCards = buildGridFromSeries(superSeries);
         const legendCards = buildGridFromSeries(legendSeries);
 
@@ -270,11 +288,23 @@
         resetWarnings();
         const rawText = textarea.value;
         if (!rawText.trim()) {
-            document.getElementById('gridOutput').innerHTML = '<div class="empty-tip">⚠️ 請在輸入區貼上貓咪資料 (包含「我的超激」與「我的傳稀」)</div>';
+            document.getElementById('gridOutput').innerHTML = '<div class="empty-tip">⚠️ 請在輸入區貼上貓咪資料 (JSON格式 或 包含「我的超激」「我的傳稀」的文字格式)</div>';
             lastResult = null;
             return;
         }
 
+        // 先嘗試當作 JSON 解析
+        const jsonResult = tryParseAsJson(rawText);
+        if (jsonResult.success) {
+            // 使用 JSON 資料直接渲染
+            lastResult = jsonResult.data;
+            renderGridFromResult(lastResult);
+            // 不產生任何警告（因為 JSON 輸入不需要解析警告）
+            showWarnings();
+            return;
+        }
+
+        // 不是有效 JSON，使用原文字解析流程
         try {
             const originalWarn = console.warn;
             console.warn = function(...args) {
@@ -295,7 +325,7 @@
             }
         } catch (err) {
             console.error(err);
-            document.getElementById('gridOutput').innerHTML = `<div class="empty-tip">❌ 解析錯誤: ${escapeHtml(err.message)}<br>請檢查資料格式。</div>`;
+            document.getElementById('gridOutput').innerHTML = `<div class="empty-tip">❌ 解析錯誤: ${escapeHtml(err.message)}<br>請檢查資料格式（JSON 或 標準文字格式）。</div>`;
             lastResult = null;
             warningArea.style.display = 'block';
             warningArea.innerHTML = `<strong>❌ 嚴重錯誤</strong><br>${escapeHtml(err.message)}`;
@@ -314,22 +344,24 @@
             alert('❌ 複製失敗，可手動選取複製');
         });
     }
+
     function downloadJson() {
-    if (!lastResult) {
-        alert('沒有可下載的 JSON 結果，請先解析資料。');
-        return;
+        if (!lastResult) {
+            alert('沒有可下載的 JSON 結果，請先解析資料。');
+            return;
+        }
+        const jsonStr = JSON.stringify(lastResult, null, 2);
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `cat_data_${new Date().toISOString().slice(0,19)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     }
-    const jsonStr = JSON.stringify(lastResult, null, 2);
-    const blob = new Blob([jsonStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `cat_data_${new Date().toISOString().slice(0,19)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    }
+
     function clearAll() {
         textarea.value = '';
         document.getElementById('gridOutput').innerHTML = '<div class="empty-tip">等待解析資料...</div>';
