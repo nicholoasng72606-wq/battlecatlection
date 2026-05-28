@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>貓咪圖鑑 - 圖片狀態網格 (無系列名稱)</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+    <h1>
+        🐱 貓咪圖鑑解析器
+    </h1>
+    <div class="sub">
+        貼上「我的超激」與「我的傳稀」完整資料，已擁有的貓咪將以網格顯示。<br>
+    </div>
+
+    <div class="card">
+        <h2>📋 輸入資料區</h2>
+        <textarea id="rawData" rows="10" placeholder='請貼上資料（包含「我的超激」與「我的傳稀」兩區塊）'></textarea>
+        <div class="button-group">
+            <button id="parseBtn">🔍 開始解析 (依兩空行規則)</button>
+            <button id="clearBtn" class="secondary">🗑️ 清空輸入</button>
+            <button id="copyBtn" class="secondary">📋 複製 JSON (完整資料)</button>
+            <button id="downloadBtn" class="secondary">💾 下載 JSON</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>📸 已擁有貓咪（圖片＋狀態）</h2>
+        <div id="gridOutput">
+            <div class="empty-tip">等待解析資料...</div>
+        </div>
+        <div id="warningArea" class="warning-log" style="display: none;"></div>
+    </div>
+    <footer>
+        ⚡ 圖片使用 <code>https://battlecatsinfo.github.io/img/u/{id}/{n}.png</code>，其中 n 由狀態決定：<br>
+        已四階→3，已三階（且非四階）→2，其餘→1。<br>
+        狀態背景：超本＝淺黃，四階＝淺紅，暫無＝淺灰。文字顏色：已＝綠，未＝紅，暫無＝灰。<br>
+        圖片框比例固定為 104:79。
+    </footer>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
