@@ -164,7 +164,6 @@
     function tryParseAsJson(inputText) {
         try {
             const parsed = JSON.parse(inputText);
-            // 檢查是否有必要的結構：super_rare.系列 或 legend_rare.系列
             if (parsed && typeof parsed === 'object') {
                 const hasSuperSeries = parsed.super_rare && Array.isArray(parsed.super_rare.系列);
                 const hasLegendSeries = parsed.legend_rare && Array.isArray(parsed.legend_rare.系列);
@@ -178,10 +177,15 @@
         }
     }
 
-    // 產生網格 HTML
-    function buildGridFromSeries(seriesArray) {
+    // 產生網格 HTML (增強錯誤處理)
+    function buildGridFromSeries(seriesArray, warningCollector) {
         let allCardsHtml = '';
         for (let series of seriesArray) {
+            // 確保 series.cats 是陣列
+            if (!series.cats || !Array.isArray(series.cats)) {
+                if (warningCollector) warningCollector(`系列「${series.name}」的 cats 不是陣列，跳過`);
+                continue;
+            }
             const ownedCats = series.cats.filter(cat => cat.owned === true);
             for (let cat of ownedCats) {
                 let statusText = "";
@@ -219,11 +223,29 @@
         return allCardsHtml;
     }
 
-    function renderGridFromResult(result) {
+    function renderGridFromResult(result, addWarningMsg) {
         const superSeries = result.super_rare?.系列 || [];
         const legendSeries = result.legend_rare?.系列 || [];
-        const superCards = buildGridFromSeries(superSeries);
-        const legendCards = buildGridFromSeries(legendSeries);
+        
+        // 統計 owned 數量 (僅供除錯)
+        let totalOwned = 0;
+        const countOwned = (seriesArr) => {
+            for (let s of seriesArr) {
+                if (s.cats && Array.isArray(s.cats)) {
+                    totalOwned += s.cats.filter(c => c.owned === true).length;
+                }
+            }
+        };
+        countOwned(superSeries);
+        countOwned(legendSeries);
+        if (addWarningMsg && totalOwned > 0) {
+            addWarningMsg(`✅ 從 JSON 中解析到 ${totalOwned} 隻已擁有的貓咪，正在顯示...`);
+        } else if (addWarningMsg && totalOwned === 0) {
+            addWarningMsg(`⚠️ 未找到任何 owned: true 的貓咪，請確認 JSON 中的 owned 欄位為 true (布林值)`);
+        }
+
+        const superCards = buildGridFromSeries(superSeries, addWarningMsg);
+        const legendCards = buildGridFromSeries(legendSeries, addWarningMsg);
 
         let fullHtml = '';
         if (superCards) {
@@ -281,7 +303,7 @@
             return;
         }
         warningArea.style.display = 'block';
-        warningArea.innerHTML = `<strong>⚠️ 解析警告</strong><br>${warningMessages.map(m => `• ${m}`).join('<br>')}`;
+        warningArea.innerHTML = `<strong>⚠️ 解析訊息</strong><br>${warningMessages.map(m => `• ${m}`).join('<br>')}`;
     }
 
     function performParse() {
@@ -296,10 +318,9 @@
         // 先嘗試當作 JSON 解析
         const jsonResult = tryParseAsJson(rawText);
         if (jsonResult.success) {
-            // 使用 JSON 資料直接渲染
             lastResult = jsonResult.data;
-            renderGridFromResult(lastResult);
-            // 不產生任何警告（因為 JSON 輸入不需要解析警告）
+            // 傳入 addWarning 函數，以便在 render 時顯示統計
+            renderGridFromResult(lastResult, addWarning);
             showWarnings();
             return;
         }
@@ -316,7 +337,7 @@
             console.warn = originalWarn;
             lastResult = result;
 
-            renderGridFromResult(result);
+            renderGridFromResult(result, addWarning);
             showWarnings();
 
             if ((result.super_rare.系列.length === 0 && result.legend_rare.系列.length === 0)) {
