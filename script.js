@@ -255,10 +255,10 @@
             fullHtml += `<div class="section-header">🐾 超激稀有</div><div class="empty-tip">無已擁有的超激貓</div>`;
         }
         if (legendCards) {
-            fullHtml += `<div class="section-header">🌟 傳稀稀有</div>`;
+            fullHtml += `<div class="section-header">🌟 傳說稀有</div>`;
             fullHtml += `<div class="cat-grid">${legendCards}</div>`;
         } else {
-            fullHtml += `<div class="section-header">🌟 傳稀稀有</div><div class="empty-tip">無已擁有的傳稀貓</div>`;
+            fullHtml += `<div class="section-header">🌟 傳說稀有</div><div class="empty-tip">無已擁有的傳稀貓</div>`;
         }
         if (!superCards && !legendCards) {
             fullHtml = '<div class="empty-tip">✨ 沒有任何已擁有的貓咪</div>';
