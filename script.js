@@ -239,7 +239,7 @@
         countOwned(superSeries);
         countOwned(legendSeries);
         if (addWarningMsg && totalOwned > 0) {
-            addWarningMsg(`✅ 從 JSON 中解析到 ${totalOwned} 隻已擁有的貓咪，正在顯示...`);
+            addWarningMsg(`✅ 解析到 ${totalOwned} 隻已擁有的貓咪，正在顯示...`);
         } else if (addWarningMsg && totalOwned === 0) {
             addWarningMsg(`⚠️ 未找到任何 owned: true 的貓咪，請確認 JSON 中的 owned 欄位為 true (布林值)`);
         }
