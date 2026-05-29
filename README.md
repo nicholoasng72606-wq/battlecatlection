@@ -2,6 +2,7 @@
 
 一個幫助《貓咪大戰爭》玩家快速整理**已擁有超激稀有**與**傳說稀有**貓咪的網頁工具。   
 之後即可匯出 / 匯入 JSON 檔案，省去重複手打的麻煩。
+
 網址：https://nicholoasng72606-wq.github.io/battlecatlection/
 ---
 
