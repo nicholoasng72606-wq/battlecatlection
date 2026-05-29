@@ -157,46 +157,53 @@ ID；一階名稱；暫無三階；擁有狀態
 }
 ```
 
-🧾 JSON 欄位定義
-路徑	型別	說明
-super_rare	object	超激稀有資料
-super_rare.不重複率	object	(可選) 各系列不重複率，key 為系列名稱，value 為百分比數字
-super_rare.系列	array	超激稀有系列陣列
-legend_rare	object	傳說稀有資料
-legend_rare.系列	array	傳說稀有系列陣列
-系列物件中的 name	string	系列名稱
-系列物件中的 cats	array	該系列的貓咪陣列
-貓咪物件中的 id	number	貓咪編號
-first_form	string	一階名稱
-third_form	string / null	三階名稱，無三階時為 null
-owned	boolean	是否已擁有（true / false）
-is_third	boolean	是否已三階（無三階的貓請填 false）
-fourth_path	string / null	四階或超本路徑，可能值："四階"、"超本"，若無則為 null
-is_fourth	boolean	是否已開啟該路徑（已四階或已超本為 true）
-⚠️ owned、is_third、is_fourth 必須是布林值（true 或 false），不能寫成字串。
+# 🧾 JSON 欄位定義
 
-🔄 建議使用流程
-第一次使用：
-在 Excel 中整理好貓咪資料，按照「文字格式」貼入工具 → 解析 → 按下「💾 下載 JSON」備份。
+| 路徑 | 型別 | 說明 |
+|------|------|------|
+| `super_rare` | object | 超激稀有資料 |
+| `super_rare.不重複率` | object | (可選) 各系列不重複率，key 為系列名稱，value 為百分比數字 |
+| `super_rare.系列` | array | 超激稀有系列陣列 |
+| `legend_rare` | object | 傳說稀有資料 |
+| `legend_rare.系列` | array | 傳說稀有系列陣列 |
+| 系列物件中的 `name` | string | 系列名稱 |
+| 系列物件中的 `cats` | array | 該系列的貓咪陣列 |
+| 貓咪物件中的 `id` | number | 貓咪編號 |
+| `first_form` | string | 一階名稱 |
+| `third_form` | string / null | 三階名稱，無三階時為 null |
+| `owned` | boolean | 是否已擁有（true / false） |
+| `is_third` | boolean | 是否已三階（無三階的貓請填 false） |
+| `fourth_path` | string / null | 四階或超本路徑，可能值："四階"、"超本"，若無則為 null |
+| `is_fourth` | boolean | 是否已開啟該路徑（已四階或已超本為 true） |
 
-之後使用：
-直接貼上備份的 JSON 內容 → 解析，或修改 JSON 內容後再貼上。
+> ⚠️ `owned`、`is_third`、`is_fourth` 必須是布林值（true 或 false），不能寫成字串。
 
-更新狀態：
-當獲得新貓或進化時，可以直接編輯 JSON 檔（改 owned、is_third 等欄位），再貼入工具重新生成圖鑑。
+---
 
-🖥️ 使用步驟
-用瀏覽器開啟 index.html
+## 🔄 建議使用流程
 
-將整理好的文字或 JSON 貼入輸入框
+1. **第一次使用**：  
+   在 Excel 中整理好貓咪資料，按照「文字格式」貼入工具 → 解析 → 按下「💾 下載 JSON」備份。
 
-點擊 「🔍 開始解析」
+2. **之後使用**：  
+   直接貼上備份的 JSON 內容 → 解析，或修改 JSON 內容後再貼上。
 
-下方會顯示「🐾 超激稀有」與「🌟 傳稀稀有」的網格
+3. **更新狀態**：  
+   當獲得新貓或進化時，可以直接編輯 JSON 檔（改 `owned`、`is_third` 等欄位），再貼入工具重新生成圖鑑。
 
-可使用 「📋 複製 JSON」 或 「💾 下載 JSON」 儲存當前資料
+---
 
-🛠️ 技術資訊
-純前端 HTML / CSS / JavaScript，無需後端
+## 🖥️ 使用步驟
 
-圖片來源：battlecatsinfo.github.io
+1. 用瀏覽器開啟 `index.html`
+2. 將整理好的文字或 JSON 貼入輸入框
+3. 點擊 「🔍 開始解析」
+4. 下方會顯示「🐾 超激稀有」與「🌟 傳稀稀有」的網格
+5. 可使用 「📋 複製 JSON」 或 「💾 下載 JSON」 儲存當前資料
+
+---
+
+## 🛠️ 技術資訊
+
+- 純前端 HTML / CSS / JavaScript，無需後端
+- 圖片來源：battlecatsinfo.github.io
