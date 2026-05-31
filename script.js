@@ -266,6 +266,28 @@
         document.getElementById('gridOutput').innerHTML = fullHtml;
     }
 
+
+    let templateTextContent = null;
+    let templateJsonContent = null;
+
+    (async function preloadTemplates() {
+        try {
+            const res = await fetch('./template/template.txt');
+            if (res.ok) templateTextContent = await res.text();
+        } catch (e) {
+            console.warn('預載 template.txt 失敗', e);
+        }
+        try {
+            const res = await fetch('./template/template.json');
+            if (res.ok) templateJsonContent = await res.text();
+        } catch (e) {
+            console.warn('預載 template.json 失敗', e);
+        }
+
+        // 載入完成後啟用按鈕
+        if (copyttBtn) copyttBtn.disabled = false;
+        if (copytjBtn) copytjBtn.disabled = false;
+    })();
     function escapeHtml(str) {
         if (!str) return '';
         return str.replace(/[&<>]/g, function(m) {
@@ -285,6 +307,9 @@
     const copyttBtn = document.getElementById('copyttBtn');
     const copytjBtn = document.getElementById('copytjBtn');
 
+    copyttBtn.disabled = true;
+    copytjBtn.disabled = true;
+    
     let lastResult = null;
     let warningMessages = [];
 
@@ -394,36 +419,30 @@
     }
 
     async function copytt() {
+        if (!templateTextContent) {
+            alert('範例尚未載入，請稍後再試');
+            return;
+        }
         try {
-            const response = await fetch('./template/template.txt');
-            
-            if (!response.ok) {
-                throw new Error('文件讀取失敗');
-            }
-            
-            const tt = await response.text(); // 獲取文本內容
-            await navigator.clipboard.writeText(tt);
+            await navigator.clipboard.writeText(templateTextContent);
             alert('✅ 完整範例輸入已複製到剪貼簿');
         } catch (error) {
             console.error(error);
-            alert('❌ 複製失敗或檔案不存在');
+            alert('❌ 複製失敗');
         }
     }
 
     async function copytj() {
+        if (!templateJsonContent) {
+            alert('範例尚未載入，請稍後再試');
+            return;
+        }
         try {
-            const response = await fetch('./template/template.json');
-            
-            if (!response.ok) {
-                throw new Error('文件讀取失敗');
-            }
-            
-            const tt = await response.text(); // 獲取文本內容
-            await navigator.clipboard.writeText(tt);
-            alert('✅ 完整範例輸入已複製到剪貼簿');
+            await navigator.clipboard.writeText(templateJsonContent);
+            alert('✅ 完整範例 JSON 已複製到剪貼簿');
         } catch (error) {
             console.error(error);
-            alert('❌ 複製失敗或檔案不存在');
+            alert('❌ 複製失敗');
         }
     }
 
