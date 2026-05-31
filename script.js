@@ -282,6 +282,8 @@
     const clearBtn = document.getElementById('clearBtn');
     const copyBtn = document.getElementById('copyBtn');
     const warningArea = document.getElementById('warningArea');
+    const copyttBtn = document.getElementById('copyttBtn');
+    const copytjBtn = document.getElementById('copytjBtn');
 
     let lastResult = null;
     let warningMessages = [];
@@ -391,8 +393,44 @@
         lastResult = null;
     }
 
+    async function copytt() {
+        try {
+            const response = await fetch('./template/template.txt');
+            
+            if (!response.ok) {
+                throw new Error('文件讀取失敗');
+            }
+            
+            const tt = await response.text(); // 獲取文本內容
+            await navigator.clipboard.writeText(tt);
+            alert('✅ 完整範例輸入已複製到剪貼簿');
+        } catch (error) {
+            console.error(error);
+            alert('❌ 複製失敗或檔案不存在');
+        }
+    }
+
+    async function copytj() {
+        try {
+            const response = await fetch('./template/template.json');
+            
+            if (!response.ok) {
+                throw new Error('文件讀取失敗');
+            }
+            
+            const tt = await response.text(); // 獲取文本內容
+            await navigator.clipboard.writeText(tt);
+            alert('✅ 完整範例輸入已複製到剪貼簿');
+        } catch (error) {
+            console.error(error);
+            alert('❌ 複製失敗或檔案不存在');
+        }
+    }
+
     parseBtn.addEventListener('click', performParse);
     clearBtn.addEventListener('click', clearAll);
     copyBtn.addEventListener('click', copyJson);
     document.getElementById('downloadBtn').addEventListener('click', downloadJson);
+    copyttBtn.addEventListener('click',copytt);
+    copytjBtn.addEventListener('click',copytj);
 })();
