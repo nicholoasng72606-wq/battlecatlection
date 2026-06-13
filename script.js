@@ -193,7 +193,7 @@
                 let textColorClass = "";
 
                 if (!cat.fourth_path && !cat.is_fourth) {
-                    statusText = "暫無四階/超本";
+                    statusText = "無lv60強化";
                     backgroundClass = "na-bg";
                     textColorClass = "na";
                 } else {
