@@ -457,3 +457,11 @@ footer {
 @media (max-width: 600px) {
     .filter-item { min-width: 45%; flex: 1 1 45%; }
 }
+.export-btn {
+    font-size: 0.8rem;
+    padding: 6px 14px;
+    margin-left: auto;
+}
+.card h2 {
+    justify-content: space-between;
+}
