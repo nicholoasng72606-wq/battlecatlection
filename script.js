@@ -222,11 +222,100 @@
         }
         return allCardsHtml;
     }
+    function matchesFilters(cat, rarityOfCat) {
+        if (cat.owned !== true) return false;
 
-    function renderGridFromResult(result, addWarningMsg) {
+        const rarityVal = filterRarity.value;
+        if (rarityVal !== 'all' && rarityVal !== rarityOfCat) return false;
+
+        const fourthVal = filterFourth.value;
+        if (fourthVal !== 'all') {
+            const hasPath = !!cat.fourth_path;
+            if (fourthVal === 'fourth' && !(hasPath && cat.is_fourth === true)) return false;
+            if (fourthVal === 'notFourth' && !(hasPath && cat.is_fourth === false)) return false;
+            if (fourthVal === 'na' && hasPath) return false;
+        }
+
+        const thirdVal = filterThird.value;
+        if (thirdVal !== 'all') {
+            const hasThirdForm = cat.third_form !== null;
+            if (thirdVal === 'third' && !(hasThirdForm && cat.is_third === true)) return false;
+            if (thirdVal === 'notThird' && !(hasThirdForm && cat.is_third === false)) return false;
+            if (thirdVal === 'noThird' && hasThirdForm) return false;
+        }
+
+        const seriesVal = filterSeries.value;
+        // seriesVal 喺外層(getFilteredSeriesArrays)已經處理緊，呢度唔使再check
+
+        return true;
+    }
+    function getFilteredSeriesArrays(result) {
+        const seriesVal = filterSeries.value; // 'all' 或 純系列名
+        const superSeriesRaw = result.super_rare?.系列 || [];
+        const legendSeriesRaw = result.legend_rare?.系列 || [];
+
+        function filterOne(seriesArr, rarityLabel) {
+            const out = [];
+            for (let s of seriesArr) {
+                if (seriesVal !== 'all' && s.name !== seriesVal) continue;
+                if (!s.cats || !Array.isArray(s.cats)) continue;
+                const filteredCats = s.cats.filter(c => matchesFilters(c, rarityLabel));
+                if (filteredCats.length > 0) {
+                    out.push({ name: s.name, cats: filteredCats });
+                }
+            }
+            return out;
+        }
+
+        return {
+            superSeries: filterOne(superSeriesRaw, 'super'),
+            legendSeries: filterOne(legendSeriesRaw, 'legend')
+        };
+    }
+    function getSeriesForProgress(result) {
+        const seriesVal = filterSeries.value; // 'all' 或 純系列名
+        const rarityVal = filterRarity.value; // 'all' / 'super' / 'legend'
+        const superSeriesRaw = result.super_rare?.系列 || [];
+
+        if (rarityVal === 'legend') return [];
+
+        const out = [];
+        for (let s of superSeriesRaw) {
+            if (seriesVal !== 'all' && s.name !== seriesVal) continue;
+            if (!s.cats || !Array.isArray(s.cats)) continue;
+            out.push(s);
+        }
+        return out;
+    }
+    function populateSeriesFilter(result) {
         const superSeries = result.super_rare?.系列 || [];
         const legendSeries = result.legend_rare?.系列 || [];
-        
+
+        const currentVal = filterSeries.value;
+        filterSeries.innerHTML = '<option value="all">全部系列</option>';
+
+        // 去重：用 Set 收集所有唯一系列名（超激+傳說混合）
+        const allNames = new Set([
+            ...superSeries.map(s => s.name),
+            ...legendSeries.map(s => s.name)
+        ]);
+
+        for (let name of allNames) {
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            filterSeries.appendChild(opt);
+        }
+
+        const stillExists = Array.from(filterSeries.options).some(o => o.value === currentVal);
+        filterSeries.value = stillExists ? currentVal : 'all';
+    }
+    function renderGridFromResult(result, addWarningMsg) {
+        const stats = computeStatistics(result);
+        renderStatistics(stats);
+        const superSeries = result.super_rare?.系列 || [];
+        const legendSeries = result.legend_rare?.系列 || [];
+
         // 統計 owned 數量 (僅供除錯)
         let totalOwned = 0;
         const countOwned = (seriesArr) => {
@@ -244,28 +333,137 @@
             addWarningMsg(`⚠️ 未找到任何 owned: true 的貓咪，請確認 JSON 中的 owned 欄位為 true (布林值)`);
         }
 
-        const superCards = buildGridFromSeries(superSeries, addWarningMsg);
-        const legendCards = buildGridFromSeries(legendSeries, addWarningMsg);
+        populateSeriesFilter(result);
+        renderFilteredGrid();
+    }
+
+    function renderFilteredGrid() {
+        if (!lastResult) return;
+
+        const { superSeries, legendSeries } = getFilteredSeriesArrays(lastResult);
+
+        const progressSeries = getSeriesForProgress(lastResult);
+        renderSeriesProgress(progressSeries);
+
+        const superCards = buildGridFromSeries(superSeries, null);
+        const legendCards = buildGridFromSeries(legendSeries, null);
 
         let fullHtml = '';
         if (superCards) {
             fullHtml += `<div class="section-header">🐾 超激稀有</div>`;
             fullHtml += `<div class="cat-grid">${superCards}</div>`;
         } else {
-            fullHtml += `<div class="section-header">🐾 超激稀有</div><div class="empty-tip">無已擁有的超激貓</div>`;
+            fullHtml += `<div class="section-header">🐾 超激稀有</div><div class="empty-tip">無符合條件的超激貓</div>`;
         }
         if (legendCards) {
             fullHtml += `<div class="section-header">🌟 傳說稀有</div>`;
             fullHtml += `<div class="cat-grid">${legendCards}</div>`;
         } else {
-            fullHtml += `<div class="section-header">🌟 傳說稀有</div><div class="empty-tip">無已擁有的傳稀貓</div>`;
+            fullHtml += `<div class="section-header">🌟 傳說稀有</div><div class="empty-tip">無符合條件的傳稀貓</div>`;
         }
         if (!superCards && !legendCards) {
-            fullHtml = '<div class="empty-tip">✨ 沒有任何已擁有的貓咪</div>';
+            fullHtml = '<div class="empty-tip">😿 沒有符合條件的貓咪，試調整篩選條件</div>';
         }
         document.getElementById('gridOutput').innerHTML = fullHtml;
     }
+    function renderSeriesProgress(superSeries) {
+        const section = document.getElementById('seriesProgressSection');
+        const listEl = document.getElementById('seriesProgressList');
 
+        if (!superSeries || superSeries.length === 0) {
+            section.style.display = 'none';
+            listEl.innerHTML = '';
+            return;
+        }
+
+        let html = '';
+        for (let s of superSeries) {
+            if (!s.cats || s.cats.length === 0) continue;
+            const total = s.cats.length;
+            const ownedCount = s.cats.filter(c => c.owned === true).length;
+            const rate = total === 0 ? 0 : (ownedCount / total) * 100;
+            const roundedRate = Math.round(rate * 10) / 10;
+
+            let rateClass = 'rate-low';
+            if (roundedRate === 100) rateClass = 'rate-complete';
+            else if (roundedRate >= 60) rateClass = 'rate-high';
+            else if (roundedRate >= 25) rateClass = 'rate-mid';
+
+            html += `
+                <div class="series-progress">
+                    <span class="series-name" title="${escapeHtml(s.name)}">${escapeHtml(s.name)}</span>
+                    <div class="progress-bar-track">
+                        <div class="progress-bar-fill ${rateClass}" style="width: ${roundedRate}%;"></div>
+                    </div>
+                    <span class="series-progress-text">${ownedCount}/${total} (${roundedRate}%)</span>
+                </div>
+            `;
+        }
+
+        if (!html) {
+            section.style.display = 'none';
+            listEl.innerHTML = '';
+            return;
+        }
+
+        listEl.innerHTML = html;
+        section.style.display = 'block';
+    }
+    function computeGroupStats(seriesArr) {
+        let fourthCount = 0, notFourthCount = 0, thirdCount = 0, notThirdCount = 0;
+        for (let s of seriesArr) {
+            if (!s.cats || !Array.isArray(s.cats)) continue;
+            for (let cat of s.cats) {
+                if (cat.owned !== true) continue;
+
+                // 四階/超本統計 (排除「無lv60強化」)
+                if (cat.fourth_path) {
+                    if (cat.is_fourth === true) fourthCount++;
+                    else notFourthCount++;
+                }
+
+                // 三階統計 (排除「暫無三階」)
+                if (cat.third_form !== null) {
+                    if (cat.is_third === true) thirdCount++;
+                    else notThirdCount++;
+                }
+            }
+        }
+        const fourthRate = (fourthCount + notFourthCount) === 0 ? 0 : (fourthCount / (fourthCount + notFourthCount)) * 100;
+        const thirdRate = (thirdCount + notThirdCount) === 0 ? 0 : (thirdCount / (thirdCount + notThirdCount)) * 100;
+        return {
+            fourthCount, notFourthCount, thirdCount, notThirdCount,
+            fourthRate: Math.round(fourthRate * 10) / 10,
+            thirdRate: Math.round(thirdRate * 10) / 10
+        };
+    }
+
+    function computeStatistics(result) {
+        const superSeries = result.super_rare?.系列 || [];
+        const legendSeries = result.legend_rare?.系列 || [];
+        return {
+            super_rare: computeGroupStats(superSeries),
+            legend_rare: computeGroupStats(legendSeries)
+        };
+    }
+
+    function renderStatistics(stats) {
+        document.getElementById('superFourthCount').textContent = stats.super_rare.fourthCount;
+        document.getElementById('superNotFourthCount').textContent = stats.super_rare.notFourthCount;
+        document.getElementById('superThirdCount').textContent = stats.super_rare.thirdCount;
+        document.getElementById('superNotThirdCount').textContent = stats.super_rare.notThirdCount;
+        document.getElementById('superFourthRate').textContent = stats.super_rare.fourthRate + '%';
+        document.getElementById('superThirdRate').textContent = stats.super_rare.thirdRate + '%';
+
+        document.getElementById('legendFourthCount').textContent = stats.legend_rare.fourthCount;
+        document.getElementById('legendNotFourthCount').textContent = stats.legend_rare.notFourthCount;
+        document.getElementById('legendThirdCount').textContent = stats.legend_rare.thirdCount;
+        document.getElementById('legendNotThirdCount').textContent = stats.legend_rare.notThirdCount;
+        document.getElementById('legendFourthRate').textContent = stats.legend_rare.fourthRate + '%';
+        document.getElementById('legendThirdRate').textContent = stats.legend_rare.thirdRate + '%';
+
+        statsCard.style.display = 'block';
+    }
 
     let templateTextContent = null;
     let templateJsonContent = null;
@@ -306,6 +504,14 @@
     const warningArea = document.getElementById('warningArea');
     const copyttBtn = document.getElementById('copyttBtn');
     const copytjBtn = document.getElementById('copytjBtn');
+    const clearStorageBtn = document.getElementById('clearStorageBtn');
+    const autoLoadTip = document.getElementById('autoLoadTip');
+    const statsCard = document.getElementById('statsCard');
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
+    const filterRarity = document.getElementById('filterRarity');
+    const filterFourth = document.getElementById('filterFourth');
+    const filterThird = document.getElementById('filterThird');
+    const filterSeries = document.getElementById('filterSeries');
 
     copyttBtn.disabled = true;
     copytjBtn.disabled = true;
@@ -348,6 +554,7 @@
             lastResult = jsonResult.data;
             // 傳入 addWarning 函數，以便在 render 時顯示統計
             renderGridFromResult(lastResult, addWarning);
+            saveToLocalStorage(rawText, lastResult);
             showWarnings();
             return;
         }
@@ -366,6 +573,7 @@
 
             renderGridFromResult(result, addWarning);
             showWarnings();
+            saveToLocalStorage(rawText, lastResult);
 
             if ((result.super_rare.系列.length === 0 && result.legend_rare.系列.length === 0)) {
                 addWarning('未解析到任何系列，請檢查格式是否包含「我的超激」與「我的傳稀」，且系列名稱後需有「:」或「：」');
@@ -416,8 +624,97 @@
         warningArea.style.display = 'none';
         warningMessages = [];
         lastResult = null;
+        statsCard.style.display = 'none'; 
+        document.getElementById('seriesProgressSection').style.display = 'none'; 
+        document.getElementById('seriesProgressList').innerHTML = '';         
+        filterRarity.value = 'all';     
+        filterFourth.value = 'all'; 
+        filterThird.value = 'all';     
+        filterSeries.innerHTML = '<option value="all">全部系列</option>';
+
+    }
+    const STORAGE_KEY_RAW = 'catData_rawInput';
+    const STORAGE_KEY_RESULT = 'catData_lastResult';
+    const STORAGE_KEY_TIME = 'catData_savedAt';
+
+    function saveToLocalStorage(rawText, result) {
+        try {
+            const now = new Date();
+            const timeStr = formatDateTime(now);
+            localStorage.setItem(STORAGE_KEY_RAW, rawText);
+            localStorage.setItem(STORAGE_KEY_RESULT, JSON.stringify(result));
+            localStorage.setItem(STORAGE_KEY_TIME, timeStr);
+        } catch (e) {
+            console.warn('localStorage 儲存失敗', e);
+        }
     }
 
+    function formatDateTime(date) {
+        const pad = n => String(n).padStart(2, '0');
+        return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    }
+
+    function loadFromLocalStorage() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY_RAW);
+            const resultStr = localStorage.getItem(STORAGE_KEY_RESULT);
+            const time = localStorage.getItem(STORAGE_KEY_TIME);
+            if (!raw || !resultStr) return false;
+
+            textarea.value = raw;
+            lastResult = JSON.parse(resultStr);
+            renderGridFromResult(lastResult, addWarning);
+            showWarnings();
+
+            document.getElementById('autoLoadTipText').textContent = `📂 已自動載入上次解析資料（${time}）`;
+            autoLoadTip.style.display = 'flex';
+            return true;
+        } catch (e) {
+            console.warn('localStorage 讀取失敗', e);
+            return false;
+        }
+    }
+    const STORAGE_KEY_THEME = 'catData_theme';
+
+    function applyTheme(theme) {
+        document.body.dataset.theme = theme;
+        themeToggleBtn.textContent = theme === 'dark' ? '☀️' : '🌙';
+    }
+
+    function initTheme() {
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY_THEME);
+            if (saved === 'light' || saved === 'dark') {
+                applyTheme(saved);
+                return;
+            }
+        } catch (e) {
+            console.warn('讀取主題設定失敗', e);
+        }
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        applyTheme(prefersDark ? 'dark' : 'light');
+    }
+
+    function toggleTheme() {
+        const current = document.body.dataset.theme;
+        const next = current === 'dark' ? 'light' : 'dark';
+        applyTheme(next);
+        try {
+            localStorage.setItem(STORAGE_KEY_THEME, next);
+        } catch (e) {
+            console.warn('儲存主題設定失敗', e);
+        }
+    }
+    function clearStorage() {
+        try {
+            localStorage.removeItem(STORAGE_KEY_RAW);
+            localStorage.removeItem(STORAGE_KEY_RESULT);
+            localStorage.removeItem(STORAGE_KEY_TIME);
+            alert('✅ 已清除本機儲存記錄');
+        } catch (e) {
+            alert('❌ 清除失敗');
+        }
+    }
     async function copytt() {
         if (!templateTextContent) {
             alert('範例尚未載入，請稍後再試');
@@ -452,4 +749,14 @@
     document.getElementById('downloadBtn').addEventListener('click', downloadJson);
     copyttBtn.addEventListener('click',copytt);
     copytjBtn.addEventListener('click',copytj);
+    clearStorageBtn.addEventListener('click', clearStorage);
+    clearStorageBtn.addEventListener('click', clearStorage);
+    themeToggleBtn.addEventListener('click', toggleTheme);
+    filterRarity.addEventListener('change', renderFilteredGrid);
+    filterFourth.addEventListener('change', renderFilteredGrid);
+    filterThird.addEventListener('change', renderFilteredGrid);
+    filterSeries.addEventListener('change', renderFilteredGrid);
+    document.getElementById('autoLoadTipClose').addEventListener('click', () => {autoLoadTip.style.display = 'none';});
+    initTheme();
+    loadFromLocalStorage();
 })();
