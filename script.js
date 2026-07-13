@@ -512,6 +512,7 @@
     const filterFourth = document.getElementById('filterFourth');
     const filterThird = document.getElementById('filterThird');
     const filterSeries = document.getElementById('filterSeries');
+    const exportImgBtn = document.getElementById('exportImgBtn');
 
     copyttBtn.disabled = true;
     copytjBtn.disabled = true;
@@ -617,7 +618,48 @@
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     }
+    async function exportImage() {
+        const target = document.getElementById('gridOutput');
+        if (!lastResult) {
+            alert('未有資料，請先解析。');
+            return;
+        }
 
+        const originalText = exportImgBtn.textContent;
+        exportImgBtn.textContent = '⏳ 匯出中...';
+        exportImgBtn.disabled = true;
+
+        try {
+            const bgColor = getComputedStyle(document.body).getPropertyValue('--bg-card').trim();
+            const canvas = await html2canvas(target, {
+                useCORS: true,
+                backgroundColor: bgColor || null,
+                scale: 2
+            });
+
+            canvas.toBlob((blob) => {
+                if (!blob) {
+                    alert('❌ 匯出失敗，請改用瀏覽器截圖功能');
+                    return;
+                }
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                const dateStr = formatDateTime(new Date()).replace(/[: ]/g, '-');
+                a.download = `cat_collection_${dateStr}.png`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 'image/png');
+        } catch (err) {
+            console.error('匯出圖片失敗', err);
+            alert('❌ 匯出圖片失敗，部分貓咪圖片可能無法讀取。\n可改用瀏覽器截圖功能：\nWindows: Win+Shift+S\nMac: Cmd+Shift+4');
+        } finally {
+            exportImgBtn.textContent = originalText;
+            exportImgBtn.disabled = false;
+        }
+}
     function clearAll() {
         textarea.value = '';
         document.getElementById('gridOutput').innerHTML = '<div class="empty-tip">等待解析資料...</div>';
@@ -756,6 +798,7 @@
     filterFourth.addEventListener('change', renderFilteredGrid);
     filterThird.addEventListener('change', renderFilteredGrid);
     filterSeries.addEventListener('change', renderFilteredGrid);
+    exportImgBtn.addEventListener('click', exportImage);
     document.getElementById('autoLoadTipClose').addEventListener('click', () => {autoLoadTip.style.display = 'none';});
     initTheme();
     loadFromLocalStorage();
