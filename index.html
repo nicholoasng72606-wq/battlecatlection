@@ -6,10 +6,11 @@
     <title>貓咪圖鑑解析器</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body data-theme="light">
 <div class="container">
     <h1>
         🐱 貓咪圖鑑解析器
+        <button id="themeToggleBtn" class="theme-toggle-btn">🌙</button>
     </h1>
     <div class="sub">
         貼上「我的超激」與「我的傳稀」完整資料，已擁有的貓咪將以網格顯示。<br>
@@ -22,19 +23,115 @@
         <div class="button-group">
             <button id="parseBtn">🔍 開始解析 </button>
             <button id="clearBtn" class="secondary">🗑️ 清空輸入</button>
+            <button id="clearStorageBtn" class="secondary">🗑️ 清除已儲存記錄</button>
             <button id="copyBtn" class="secondary">📋 複製 JSON </button>
             <button id="downloadBtn" class="secondary">💾 下載 JSON</button>
             <button id="copyttBtn" class="secondary">複製範例輸入</button>
             <button id="copytjBtn" class="secondary">複製範例JSON</button>
         </div>
     </div>
-
+    <div class="card" id="statsCard" style="display:none;">
+        <h2>📊 收藏統計</h2>
+        <div class="stats-group">
+            <h3>🐾 超激稀有</h3>
+            <div class="stats-numbers">
+                <div class="stat-box">
+                    <div class="stat-label">已四階/超本</div>
+                    <div class="stat-value" id="superFourthCount">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">未四階/超本</div>
+                    <div class="stat-value" id="superNotFourthCount">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">已三階</div>
+                    <div class="stat-value" id="superThirdCount">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">未三階</div>
+                    <div class="stat-value" id="superNotThirdCount">0</div>
+                </div>
+            </div>
+            <div class="stats-rates">
+                <span>四階完成度: <strong id="superFourthRate">0%</strong></span>
+                <span>三階完成度: <strong id="superThirdRate">0%</strong></span>
+            </div>
+        </div>
+        <div class="stats-group">
+            <h3>🌟 傳說稀有</h3>
+            <div class="stats-numbers">
+                <div class="stat-box">
+                    <div class="stat-label">已四階/超本</div>
+                    <div class="stat-value" id="legendFourthCount">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">未四階</div>
+                    <div class="stat-value" id="legendNotFourthCount">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">已三階</div>
+                    <div class="stat-value" id="legendThirdCount">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">未三階</div>
+                    <div class="stat-value" id="legendNotThirdCount">0</div>
+                </div>
+            </div>
+            <div class="stats-rates">
+                <span>四階強化完成度: <strong id="legendFourthRate">0%</strong></span>
+                <span>三階完成度: <strong id="legendThirdRate">0%</strong></span>
+            </div>
+        </div>
+    </div>
     <div class="card">
         <h2>📸 已擁有貓咪</h2>
+        <div id="autoLoadTip" class="auto-load-tip" style="display:none;">
+            <span id="autoLoadTipText"></span>
+            <button id="autoLoadTipClose" class="tip-close-btn">✕</button>
+        </div>
+        <div class="filter-bar">
+            <div class="filter-item">
+                <label for="filterRarity">稀有度</label>
+                <select id="filterRarity">
+                    <option value="all">全部</option>
+                    <option value="super">超激稀有</option>
+                    <option value="legend">傳說稀有</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <label for="filterFourth">四階狀態</label>
+                <select id="filterFourth">
+                    <option value="all">全部</option>
+                    <option value="fourth">已四階/超本</option>
+                    <option value="notFourth">未四階</option>
+                    <option value="na">無lv60強化</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <label for="filterThird">三階狀態</label>
+                <select id="filterThird">
+                    <option value="all">全部</option>
+                    <option value="third">已三階</option>
+                    <option value="notThird">未三階</option>
+                    <option value="noThird">暫無三階</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <label for="filterSeries">系列</label>
+                <select id="filterSeries">
+                    <option value="all">全部系列</option>
+                </select>
+            </div>
+        </div>
+
         <div id="gridOutput">
             <div class="empty-tip">等待解析資料...</div>
         </div>
         <div id="warningArea" class="warning-log" style="display: none;"></div>
+        <div class="series-progress-section" id="seriesProgressSection" style="display:none;">
+            <h2>📊 系列收集進度<small>只限超激稀有</small></h2>
+            <div id="seriesProgressList"></div>
+        </div>
     </div>
     <footer>
         ⚡ 圖片使用 <code>https://battlecatsinfo.github.io/img/u/
