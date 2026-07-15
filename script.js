@@ -386,8 +386,8 @@
 
             let rateClass = 'rate-low';
             if (roundedRate === 100) rateClass = 'rate-complete';
-            else if (roundedRate >= 60) rateClass = 'rate-high';
-            else if (roundedRate >= 25) rateClass = 'rate-mid';
+            else if (roundedRate >= 65) rateClass = 'rate-high';
+            else if (roundedRate >= 30) rateClass = 'rate-mid';
 
             html += `
                 <div class="series-progress">
