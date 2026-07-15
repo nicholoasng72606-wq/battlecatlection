@@ -29,6 +29,8 @@
     --bg-tip: #e7f3ff;
     --border-tip: #4a90d9;
     --text-tip: #2c5a8c;
+    --bg-status-unowned: #4a4a4a;
+    --text-unowned-label: #ff6b6b;
 }
 
 [data-theme="dark"] {
@@ -62,6 +64,8 @@
     --bg-tip: #1a2c3d;
     --border-tip: #4a90d9;
     --text-tip: #8ec1ea;
+    --bg-status-unowned: #c4c4c4;
+    --text-unowned-label: #8b0000;
 }
 
 * {
@@ -464,4 +468,12 @@ footer {
 }
 .card h2 {
     justify-content: space-between;
+}
+.cat-card.unowned-card {
+    border: 2px solid var(--text-not-owned);
+}
+.status.unowned {
+    background: var(--bg-status-unowned);
+    color: var(--text-unowned-label);
+    font-weight: bold;
 }
