@@ -10,7 +10,15 @@
         }
         return `https://battlecatsinfo.github.io/img/u/${catId}/${version}.png`;
     }
-
+    function getPreviewImageUrl(catId, thirdForm, fourthPath) {
+        let version = 1;
+        if (fourthPath === "四階") {
+            version = 3;
+        } else if (thirdForm !== null) {
+            version = 2;
+        }
+        return `https://battlecatsinfo.github.io/img/u/${catId}/${version}.png`;
+    }
     // ---------- 輔助函數：解析四階/超本字串 ----------
     function parseFourthStatus(raw) {
         if (!raw || raw === "暫無四階/超本" || raw === "") {
@@ -178,52 +186,70 @@
     }
 
     // 產生網格 HTML (增強錯誤處理)
+    function buildOwnedCardHtml(cat) {
+        let statusText = "";
+        let backgroundClass = "";
+        let textColorClass = "";
+
+        if (!cat.fourth_path && !cat.is_fourth) {
+            statusText = "無lv60強化";
+            backgroundClass = "na-bg";
+            textColorClass = "na";
+        } else {
+            const prefix = cat.is_fourth ? "已" : "未";
+            const suffix = cat.fourth_path === "四階" ? "四階" : (cat.fourth_path === "超本" ? "超本" : "");
+            statusText = prefix + suffix;
+            textColorClass = cat.is_fourth ? "owned-text" : "not-owned-text";
+            if (cat.fourth_path === "超本") {
+                backgroundClass = "super";
+            } else if (cat.fourth_path === "四階") {
+                backgroundClass = "fourth";
+            } else {
+                backgroundClass = "na-bg";
+            }
+        }
+
+        const imgUrl = getCatImageUrl(cat.id, cat.is_third, cat.is_fourth, cat.fourth_path);
+        const tooltipText = `${cat.first_form} (ID: ${cat.id})${cat.is_third ? ' · 已三階' : ' · 未三階'}`;
+        return `
+            <div class="cat-card" title="${escapeHtml(tooltipText)}">
+                <img src="${imgUrl}" alt="${escapeHtml(tooltipText)}" class="cat-img" loading="lazy" onerror="this.src='https://via.placeholder.com/100x100?text=Error'">
+                <div class="status ${textColorClass} ${backgroundClass}">${escapeHtml(statusText)}</div>
+            </div>
+        `;
+    }
+
+    function buildUnownedCardHtml(cat) {
+        const imgUrl = getPreviewImageUrl(cat.id, cat.third_form, cat.fourth_path);
+        const tooltipText = `${cat.first_form} (ID: ${cat.id}) · 未擁有`;
+        return `
+            <div class="cat-card unowned-card" title="${escapeHtml(tooltipText)}">
+                <img src="${imgUrl}" alt="${escapeHtml(tooltipText)}" class="cat-img" loading="lazy" onerror="this.src='https://via.placeholder.com/100x100?text=Error'">
+                <div class="status unowned">未擁有</div>
+            </div>
+        `;
+    }
+
     function buildGridFromSeries(seriesArray, warningCollector) {
         let allCardsHtml = '';
         for (let series of seriesArray) {
-            // 確保 series.cats 是陣列
             if (!series.cats || !Array.isArray(series.cats)) {
                 if (warningCollector) warningCollector(`系列「${series.name}」的 cats 不是陣列，跳過`);
                 continue;
             }
-            const ownedCats = series.cats.filter(cat => cat.owned === true);
-            for (let cat of ownedCats) {
-                let statusText = "";
-                let backgroundClass = "";
-                let textColorClass = "";
-
-                if (!cat.fourth_path && !cat.is_fourth) {
-                    statusText = "無lv60強化";
-                    backgroundClass = "na-bg";
-                    textColorClass = "na";
-                } else {
-                    const prefix = cat.is_fourth ? "已" : "未";
-                    const suffix = cat.fourth_path === "四階" ? "四階" : (cat.fourth_path === "超本" ? "超本" : "");
-                    statusText = prefix + suffix;
-                    textColorClass = cat.is_fourth ? "owned-text" : "not-owned-text";
-                    if (cat.fourth_path === "超本") {
-                        backgroundClass = "super";
-                    } else if (cat.fourth_path === "四階") {
-                        backgroundClass = "fourth";
-                    } else {
-                        backgroundClass = "na-bg";
-                    }
-                }
-
-                const imgUrl = getCatImageUrl(cat.id, cat.is_third, cat.is_fourth, cat.fourth_path);
-                const tooltipText = `${cat.first_form} (ID: ${cat.id})${cat.is_third ? ' · 已三階' : ' · 未三階'}`;
-                allCardsHtml += `
-                    <div class="cat-card" title="${escapeHtml(tooltipText)}">
-                        <img src="${imgUrl}" alt="${escapeHtml(tooltipText)}" class="cat-img" loading="lazy" onerror="this.src='https://via.placeholder.com/100x100?text=Error'">
-                        <div class="status ${textColorClass} ${backgroundClass}">${escapeHtml(statusText)}</div>
-                    </div>
-                `;
+            // 已擁有優先排前，未擁有跟尾
+            const sortedCats = [...series.cats].sort((a, b) => {
+                if (a.owned === b.owned) return 0;
+                return a.owned ? -1 : 1;
+            });
+            for (let cat of sortedCats) {
+                allCardsHtml += cat.owned === true ? buildOwnedCardHtml(cat) : buildUnownedCardHtml(cat);
             }
         }
         return allCardsHtml;
     }
     function matchesFilters(cat, rarityOfCat) {
-        if (cat.owned !== true) return false;
+        if (!showUnowned && cat.owned !== true) return false;
 
         const rarityVal = filterRarity.value;
         if (rarityVal !== 'all' && rarityVal !== rarityOfCat) return false;
@@ -366,6 +392,30 @@
         }
         document.getElementById('gridOutput').innerHTML = fullHtml;
     }
+    function toggleShowUnowned() {
+        showUnowned = !showUnowned;
+        if (showUnowned) {
+            filterFourth.value = 'all';
+            filterThird.value = 'all';
+            filterFourth.disabled = true;
+            filterThird.disabled = true;
+            showUnownedBtn.textContent = '🙈 隱藏未擁有';
+        } else {
+            filterFourth.disabled = false;
+            filterThird.disabled = false;
+            showUnownedBtn.textContent = '👀 顯示未擁有';
+        }
+        renderFilteredGrid();
+    }
+
+    function handleSeriesFilterChange() {
+        showUnowned = false;
+        filterFourth.disabled = false;
+        filterThird.disabled = false;
+        showUnownedBtn.textContent = '👀 顯示未擁有';
+        showUnownedWrap.style.display = (filterSeries.value !== 'all') ? 'flex' : 'none';
+        renderFilteredGrid();
+    }
     function renderSeriesProgress(superSeries) {
         const section = document.getElementById('seriesProgressSection');
         const listEl = document.getElementById('seriesProgressList');
@@ -386,8 +436,8 @@
 
             let rateClass = 'rate-low';
             if (roundedRate === 100) rateClass = 'rate-complete';
-            else if (roundedRate >= 65) rateClass = 'rate-high';
-            else if (roundedRate >= 30) rateClass = 'rate-mid';
+            else if (roundedRate >= 60) rateClass = 'rate-high';
+            else if (roundedRate >= 25) rateClass = 'rate-mid';
 
             html += `
                 <div class="series-progress">
@@ -513,11 +563,14 @@
     const filterThird = document.getElementById('filterThird');
     const filterSeries = document.getElementById('filterSeries');
     const exportImgBtn = document.getElementById('exportImgBtn');
+    const showUnownedWrap = document.getElementById('showUnownedWrap');
+    const showUnownedBtn = document.getElementById('showUnownedBtn');
 
     copyttBtn.disabled = true;
     copytjBtn.disabled = true;
     
     let lastResult = null;
+    let showUnowned = false;
     let warningMessages = [];
 
     function addWarning(msg) {
@@ -673,8 +726,12 @@
         filterFourth.value = 'all'; 
         filterThird.value = 'all';     
         filterSeries.innerHTML = '<option value="all">全部系列</option>';
-
-    }
+        showUnowned = false;
+        filterFourth.disabled = false;
+        filterThird.disabled = false;
+        showUnownedBtn.textContent = '👀 顯示未擁有';
+        showUnownedWrap.style.display = 'none';
+    }   
     const STORAGE_KEY_RAW = 'catData_rawInput';
     const STORAGE_KEY_RESULT = 'catData_lastResult';
     const STORAGE_KEY_TIME = 'catData_savedAt';
@@ -794,7 +851,8 @@
     clearStorageBtn.addEventListener('click', clearStorage);
     clearStorageBtn.addEventListener('click', clearStorage);
     themeToggleBtn.addEventListener('click', toggleTheme);
-    filterRarity.addEventListener('change', renderFilteredGrid);
+    filterSeries.addEventListener('change', handleSeriesFilterChange);
+    showUnownedBtn.addEventListener('click', toggleShowUnowned);
     filterFourth.addEventListener('change', renderFilteredGrid);
     filterThird.addEventListener('change', renderFilteredGrid);
     filterSeries.addEventListener('change', renderFilteredGrid);
