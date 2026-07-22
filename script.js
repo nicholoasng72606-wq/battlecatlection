@@ -413,7 +413,7 @@
         filterFourth.disabled = false;
         filterThird.disabled = false;
         showUnownedBtn.textContent = '👀 顯示未擁有';
-        showUnownedWrap.style.display = (filterSeries.value !== 'all') ? 'flex' : 'none';
+        showUnownedWrap.style.display = (filterSeries.value !== '') ? 'flex' : 'none';
         renderFilteredGrid();
     }
     function renderSeriesProgress(superSeries) {
