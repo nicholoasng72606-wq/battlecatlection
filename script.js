@@ -677,19 +677,40 @@
             alert('未有資料，請先解析。');
             return;
         }
-
+    
         const originalText = exportImgBtn.textContent;
         exportImgBtn.textContent = '⏳ 匯出中...';
         exportImgBtn.disabled = true;
-
+    
         try {
+            // ✅ 強制所有懶載入圖片立刻開始下載
+            const allImages = target.querySelectorAll('img');
+            allImages.forEach(img => {
+                if (img.loading === 'lazy') {
+                    img.loading = 'eager';   // 或 img.removeAttribute('loading')
+                }
+            });
+    
+            // ✅ 等待全部圖片載入完成（包含失敗的）
+            const loadPromises = Array.from(allImages).map(img => {
+                if (img.complete) {
+                    return Promise.resolve();
+                }
+                return new Promise(resolve => {
+                    img.onload = resolve;
+                    img.onerror = resolve;   // 即使載入失敗也要繼續
+                });
+            });
+            await Promise.all(loadPromises);
+    
+            // 再擷取畫面
             const bgColor = getComputedStyle(document.body).getPropertyValue('--bg-card').trim();
             const canvas = await html2canvas(target, {
                 useCORS: true,
                 backgroundColor: bgColor || null,
                 scale: 2
             });
-
+    
             canvas.toBlob((blob) => {
                 if (!blob) {
                     alert('❌ 匯出失敗，請改用瀏覽器截圖功能');
@@ -712,7 +733,7 @@
             exportImgBtn.textContent = originalText;
             exportImgBtn.disabled = false;
         }
-}
+    }
     function clearAll() {
         textarea.value = '';
         document.getElementById('gridOutput').innerHTML = '<div class="empty-tip">等待解析資料...</div>';
