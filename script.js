@@ -257,9 +257,17 @@
         const fourthVal = filterFourth.value;
         if (fourthVal !== 'all') {
             const hasPath = !!cat.fourth_path;
-            if (fourthVal === 'fourth' && !(hasPath && cat.is_fourth === true)) return false;
-            if (fourthVal === 'notFourth' && !(hasPath && cat.is_fourth === false)) return false;
-            if (fourthVal === 'na' && hasPath) return false;
+            if (fourthVal === 'fourth') {
+                if (!(hasPath && cat.is_fourth === true)) return false;
+            } else if (fourthVal === 'notFourth') {
+                if (!(hasPath && cat.is_fourth === false)) return false;
+            } else if (fourthVal === 'notFourthOnly') {
+                if (!(cat.fourth_path === "四階" && cat.is_fourth === false)) return false;
+            } else if (fourthVal === 'notSuper') {
+                if (!(cat.fourth_path === "超本" && cat.is_fourth === false)) return false;
+            } else if (fourthVal === 'na') {
+                if (hasPath) return false;
+            }
         }
 
         const thirdVal = filterThird.value;
