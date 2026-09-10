@@ -803,7 +803,7 @@
         const dataParam = params.get('data');
         if (dataParam) {
             try {
-                textarea.value = decodeURIComponent(dataParam);
+                textarea.value = dataParam;
                 performParse();
                 showUrlTip('🔗 已從網址參數 data 載入資料');
                 return true;
@@ -816,7 +816,7 @@
         const jsonParam = params.get('json');
         if (jsonParam) {
             try {
-                textarea.value = decodeURIComponent(jsonParam);
+                textarea.value = jsonParam;
                 performParse();
                 showUrlTip('🔗 已從網址參數 json 載入資料');
                 return true;
