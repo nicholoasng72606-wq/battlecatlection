@@ -794,6 +794,80 @@
             return false;
         }
     }
+        // ---------- 從網址自動載入資料 ----------
+    function loadFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        const hash = window.location.hash;
+    
+        // 1. ?data=... （短資料，直接放在網址）
+        const dataParam = params.get('data');
+        if (dataParam) {
+            try {
+                textarea.value = decodeURIComponent(dataParam);
+                performParse();
+                showUrlTip('🔗 已從網址參數 data 載入資料');
+                return true;
+            } catch (e) {
+                console.warn('data 參數解碼失敗', e);
+            }
+        }
+    
+        // 2. ?json=... （JSON 格式）
+        const jsonParam = params.get('json');
+        if (jsonParam) {
+            try {
+                textarea.value = decodeURIComponent(jsonParam);
+                performParse();
+                showUrlTip('🔗 已從網址參數 json 載入資料');
+                return true;
+            } catch (e) {
+                console.warn('json 參數解碼失敗', e);
+            }
+        }
+    
+        // 3. ?src=... （指向一個檔案，適合長資料）
+        const srcParam = params.get('src');
+        if (srcParam) {
+            fetch(srcParam)
+                .then(r => {
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.text();
+                })
+                .then(text => {
+                    textarea.value = text;
+                    performParse();
+                    showUrlTip('🔗 已從外部檔案載入：' + srcParam);
+                })
+                .catch(e => {
+                    console.warn('src 載入失敗', e);
+                    alert('❌ 無法載入 ' + srcParam + '\n' + e.message);
+                });
+            return true;
+        }
+    
+        // 4. #data=... （用 hash，長度限制較寬）
+        if (hash.startsWith('#data=')) {
+            try {
+                textarea.value = decodeURIComponent(hash.substring(6));
+                performParse();
+                showUrlTip('🔗 已從網址 hash 載入資料');
+                return true;
+            } catch (e) {
+                console.warn('hash data 解碼失敗', e);
+            }
+        }
+    
+        return false;
+    }
+    
+    // 顯示提示條
+    function showUrlTip(msg) {
+        const tipText = document.getElementById('autoLoadTipText');
+        if (tipText) {
+            tipText.textContent = msg;
+            autoLoadTip.style.display = 'flex';
+        }
+    }
     const STORAGE_KEY_THEME = 'catData_theme';
 
     function applyTheme(theme) {
@@ -880,5 +954,7 @@
     exportImgBtn.addEventListener('click', exportImage);
     document.getElementById('autoLoadTipClose').addEventListener('click', () => {autoLoadTip.style.display = 'none';});
     initTheme();
-    loadFromLocalStorage();
+    if (!loadFromUrl()) {
+        loadFromLocalStorage();
+    }
 })();
