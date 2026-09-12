@@ -270,7 +270,14 @@
                 if (hasPath) return false;
             }
         }
-
+        
+        const pathVal = filterFourthPath.value;
+        if (pathVal !== 'all') {
+            if (pathVal === 'fourth' && cat.fourth_path !== '四階') return false;
+            if (pathVal === 'super' && cat.fourth_path !== '超本') return false;
+            if (pathVal === 'na' && cat.fourth_path !== null) return false;
+        }
+        
         const thirdVal = filterThird.value;
         if (thirdVal !== 'all') {
             const hasThirdForm = cat.third_form !== null;
@@ -419,16 +426,20 @@
             showUnownedBtn.textContent = '👀 只顯示已擁有';
             filterFourth.disabled = false;
             filterThird.disabled = false;
+            filterFourthPath.disabled = false;
         } else if (displayMode === 'all') {
             showUnownedBtn.textContent = '👁️ 顯示全部';
             filterFourth.disabled = false;
             filterThird.disabled = false;
+            filterFourthPath.disabled = false;
         } else {
             showUnownedBtn.textContent = '🙈 只顯示未擁有';
             filterFourth.value = 'all';
             filterThird.value = 'all';
             filterFourth.disabled = true;
             filterThird.disabled = true;
+            filterFourthPath.value = 'all';    
+            filterFourthPath.disabled = true;   
         }
     }
 
@@ -582,6 +593,7 @@
     const themeToggleBtn = document.getElementById('themeToggleBtn');
     const filterRarity = document.getElementById('filterRarity');
     const filterFourth = document.getElementById('filterFourth');
+    const filterFourthPath = document.getElementById('filterFourthPath');
     const filterThird = document.getElementById('filterThird');
     const filterSeries = document.getElementById('filterSeries');
     const exportImgBtn = document.getElementById('exportImgBtn');
@@ -767,6 +779,7 @@
         document.getElementById('seriesProgressList').innerHTML = '';         
         filterRarity.value = 'all';     
         filterFourth.value = 'all'; 
+        filterFourthPath.value = 'all';
         filterThird.value = 'all';     
         filterSeries.innerHTML = '<option value="all">全部系列</option>';
         displayMode = 'owned';
@@ -969,6 +982,7 @@
     filterSeries.addEventListener('change', handleSeriesFilterChange);
     showUnownedBtn.addEventListener('click', toggleDisplayMode);
     filterFourth.addEventListener('change', renderFilteredGrid);
+    filterFourthPath.addEventListener('change', renderFilteredGrid);
     filterThird.addEventListener('change', renderFilteredGrid);
     filterSeries.addEventListener('change', renderFilteredGrid);
     exportImgBtn.addEventListener('click', exportImage);
