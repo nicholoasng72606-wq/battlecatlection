@@ -421,10 +421,8 @@
             filterThird.disabled = false;
         } else if (displayMode === 'all') {
             showUnownedBtn.textContent = '👁️ 顯示全部';
-            filterFourth.value = 'all';
-            filterThird.value = 'all';
-            filterFourth.disabled = true;
-            filterThird.disabled = true;
+            filterFourth.disabled = false;
+            filterThird.disabled = false;
         } else {
             showUnownedBtn.textContent = '🙈 只顯示未擁有';
             filterFourth.value = 'all';
