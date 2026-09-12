@@ -249,7 +249,8 @@
         return allCardsHtml;
     }
     function matchesFilters(cat, rarityOfCat) {
-        if (!showUnowned && cat.owned !== true) return false;
+        if (displayMode === 'owned' && cat.owned !== true) return false;
+        if (displayMode === 'unowned' && cat.owned !== false) return false;
 
         const rarityVal = filterRarity.value;
         if (rarityVal !== 'all' && rarityVal !== rarityOfCat) return false;
@@ -400,27 +401,42 @@
         }
         document.getElementById('gridOutput').innerHTML = fullHtml;
     }
-    function toggleShowUnowned() {
-        showUnowned = !showUnowned;
-        if (showUnowned) {
+    function toggleDisplayMode() {
+        // 循環：owned → all → unowned → owned
+        if (displayMode === 'owned') {
+            displayMode = 'all';
+        } else if (displayMode === 'all') {
+            displayMode = 'unowned';
+        } else {
+            displayMode = 'owned';
+        }
+        updateDisplayModeUI();
+        renderFilteredGrid();
+    }
+    
+    function updateDisplayModeUI() {
+        if (displayMode === 'owned') {
+            showUnownedBtn.textContent = '👀 只顯示已擁有';
+            filterFourth.disabled = false;
+            filterThird.disabled = false;
+        } else if (displayMode === 'all') {
+            showUnownedBtn.textContent = '👁️ 顯示全部';
             filterFourth.value = 'all';
             filterThird.value = 'all';
             filterFourth.disabled = true;
             filterThird.disabled = true;
-            showUnownedBtn.textContent = '🙈 隱藏未擁有';
         } else {
-            filterFourth.disabled = false;
-            filterThird.disabled = false;
-            showUnownedBtn.textContent = '👀 顯示未擁有';
+            showUnownedBtn.textContent = '🙈 只顯示未擁有';
+            filterFourth.value = 'all';
+            filterThird.value = 'all';
+            filterFourth.disabled = true;
+            filterThird.disabled = true;
         }
-        renderFilteredGrid();
     }
 
     function handleSeriesFilterChange() {
-        showUnowned = false;
-        filterFourth.disabled = false;
-        filterThird.disabled = false;
-        showUnownedBtn.textContent = '👀 顯示未擁有';
+        displayMode = 'owned';
+        updateDisplayModeUI();
         showUnownedWrap.style.display = (filterSeries.value !== '') ? 'flex' : 'none';
         renderFilteredGrid();
     }
@@ -578,7 +594,7 @@
     copytjBtn.disabled = true;
     
     let lastResult = null;
-    let showUnowned = false;
+    let displayMode = 'owned';  
     let warningMessages = [];
 
     function addWarning(msg) {
@@ -755,10 +771,8 @@
         filterFourth.value = 'all'; 
         filterThird.value = 'all';     
         filterSeries.innerHTML = '<option value="all">全部系列</option>';
-        showUnowned = false;
-        filterFourth.disabled = false;
-        filterThird.disabled = false;
-        showUnownedBtn.textContent = '👀 顯示未擁有';
+        displayMode = 'owned';
+        updateDisplayModeUI();
         showUnownedWrap.style.display = 'none';
     }   
     const STORAGE_KEY_RAW = 'catData_rawInput';
@@ -955,7 +969,7 @@
     clearStorageBtn.addEventListener('click', clearStorage);
     themeToggleBtn.addEventListener('click', toggleTheme);
     filterSeries.addEventListener('change', handleSeriesFilterChange);
-    showUnownedBtn.addEventListener('click', toggleShowUnowned);
+    showUnownedBtn.addEventListener('click', toggleDisplayMode);
     filterFourth.addEventListener('change', renderFilteredGrid);
     filterThird.addEventListener('change', renderFilteredGrid);
     filterSeries.addEventListener('change', renderFilteredGrid);
@@ -965,4 +979,5 @@
     if (!loadFromUrl()) {
         loadFromLocalStorage();
     }
+    updateDisplayModeUI();
 })();
