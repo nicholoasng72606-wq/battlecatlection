@@ -452,26 +452,57 @@
     function renderSeriesProgress(superSeries) {
         const section = document.getElementById('seriesProgressSection');
         const listEl = document.getElementById('seriesProgressList');
-
+    
         if (!superSeries || superSeries.length === 0) {
             section.style.display = 'none';
             listEl.innerHTML = '';
             return;
         }
-
+    
+        // ---------- 先算「全部系列」總計 ----------
+        let totalAll = 0;
+        let ownedAll = 0;
+        for (let s of superSeries) {
+            if (!s.cats || !Array.isArray(s.cats)) continue;
+            totalAll += s.cats.length;
+            ownedAll += s.cats.filter(c => c.owned === true).length;
+        }
+    
         let html = '';
+    
+        // 全部系列那一列
+        if (totalAll > 0) {
+            const rateAll = (ownedAll / totalAll) * 100;
+            const roundedAll = Math.round(rateAll * 10) / 10;
+            let rateClassAll = 'rate-low';
+            if (roundedAll === 100) rateClassAll = 'rate-complete';
+            else if (roundedAll >= 60) rateClassAll = 'rate-high';
+            else if (roundedAll >= 25) rateClassAll = 'rate-mid';
+    
+            html += `
+                <div class="series-progress series-progress-total">
+                    <span class="series-name" title="全部系列">全部系列</span>
+                    <div class="progress-bar-track">
+                        <div class="progress-bar-fill ${rateClassAll}" style="width: ${roundedAll}%;"></div>
+                    </div>
+                    <span class="series-progress-text">${ownedAll}/${totalAll} (${roundedAll}%)</span>
+                </div>
+            `;
+        }
+    
+        // 各系列
         for (let s of superSeries) {
             if (!s.cats || s.cats.length === 0) continue;
             const total = s.cats.length;
             const ownedCount = s.cats.filter(c => c.owned === true).length;
             const rate = total === 0 ? 0 : (ownedCount / total) * 100;
             const roundedRate = Math.round(rate * 10) / 10;
-
+    
             let rateClass = 'rate-low';
             if (roundedRate === 100) rateClass = 'rate-complete';
             else if (roundedRate >= 60) rateClass = 'rate-high';
             else if (roundedRate >= 25) rateClass = 'rate-mid';
-
+    
             html += `
                 <div class="series-progress">
                     <span class="series-name" title="${escapeHtml(s.name)}">${escapeHtml(s.name)}</span>
@@ -482,16 +513,16 @@
                 </div>
             `;
         }
-
+    
         if (!html) {
             section.style.display = 'none';
             listEl.innerHTML = '';
             return;
         }
-
+    
         listEl.innerHTML = html;
         section.style.display = 'block';
-    }
+}
     function computeGroupStats(seriesArr) {
         let fourthCount = 0, notFourthCount = 0, thirdCount = 0, notThirdCount = 0;
         for (let s of seriesArr) {
